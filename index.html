@@ -298,9 +298,108 @@
     .right-panel { position: static; }
     .form-row { grid-template-columns: 1fr; }
   }
+
+  /* ACCESS GATE */
+  #access-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gate-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 48px 40px 40px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .gate-logo-wrap { margin-bottom: 20px; }
+  .gate-logo-wrap img { height: 56px; width: auto; }
+  .gate-logo-text {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f3460;
+    letter-spacing: 3px;
+  }
+  .gate-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+  .gate-subtitle {
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 28px;
+  }
+  .gate-input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 22px;
+    letter-spacing: 8px;
+    text-align: center;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+    font-family: monospace;
+  }
+  .gate-input:focus { border-color: #0f3460; }
+  .gate-input.gate-shake {
+    border-color: #e74c3c;
+    animation: gateShake 0.4s ease;
+  }
+  @keyframes gateShake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-8px); }
+    40%      { transform: translateX(8px); }
+    60%      { transform: translateX(-6px); }
+    80%      { transform: translateX(6px); }
+  }
+  .gate-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #0f3460, #1a1a2e);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    letter-spacing: 1px;
+  }
+  .gate-btn:hover { opacity: 0.88; }
+  .gate-error {
+    color: #e74c3c;
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 18px;
+  }
 </style>
 </head>
 <body>
+
+<!-- ACCESS GATE -->
+<div id="access-gate">
+  <div class="gate-card">
+    <div class="gate-logo-wrap">
+      <img src="bsg_logo.png" alt="BSG" onerror="this.style.display='none';document.getElementById('gate-logo-fallback').style.display='block'">
+      <div id="gate-logo-fallback" class="gate-logo-text" style="display:none">BSG</div>
+    </div>
+    <div class="gate-title">Equipment Quote Builder</div>
+    <div class="gate-subtitle">Enter your access code to continue</div>
+    <input type="password" id="gate-code" class="gate-input" placeholder="·  ·  ·  ·  ·  ·  ·" maxlength="7" autocomplete="off" inputmode="numeric">
+    <button class="gate-btn" id="gate-btn">Access Quote Builder</button>
+    <div class="gate-error" id="gate-error"></div>
+  </div>
+</div>
 
 <div class="header">
   <div class="header-inner">
@@ -642,6 +741,37 @@ function sendEmail() {
   const mailtoLink = `mailto:${email}?subject=${subject}&body=${bodyEncoded}`;
 
   window.location.href = mailtoLink;
+}
+
+// =============================================
+// ACCESS GATE
+// =============================================
+function checkCode() {
+  const input = document.getElementById('gate-code');
+  const error = document.getElementById('gate-error');
+  if (input.value === '7666626') {
+    document.getElementById('access-gate').style.display = 'none';
+    sessionStorage.setItem('bsg_auth', '1');
+  } else {
+    error.textContent = 'Incorrect code — please try again.';
+    input.classList.add('gate-shake');
+    input.value = '';
+    setTimeout(() => {
+      input.classList.remove('gate-shake');
+      error.textContent = '';
+    }, 1800);
+    input.focus();
+  }
+}
+
+document.getElementById('gate-btn').addEventListener('click', checkCode);
+document.getElementById('gate-code').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') checkCode();
+});
+
+// Skip gate if already authenticated this session
+if (sessionStorage.getItem('bsg_auth') === '1') {
+  document.getElementById('access-gate').style.display = 'none';
 }
 
 // =============================================
