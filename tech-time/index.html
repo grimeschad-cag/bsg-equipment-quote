@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech GPS vs Timeclock</title>
+<style>
+  :root{--bg:#f4f6f9;--card:#fff;--ink:#1a2330;--mut:#64748b;--red:#dc2626;--green:#16a34a;--blue:#2563eb;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;}
+  body{background:var(--bg);color:var(--ink);padding:24px;}
+  h1{font-size:22px;margin-bottom:4px;}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:18px;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px;}
+  .card{background:var(--card);border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .card .v{font-size:24px;font-weight:700;}
+  .card .l{font-size:12px;color:var(--mut);margin-top:2px;}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+  .controls input,.controls select{padding:8px 10px;border:1px solid #d4dae3;border-radius:8px;font-size:13px;background:#fff;}
+  #daySel{font-weight:700;}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:13px;}
+  th{background:#1e293b;color:#fff;padding:10px 8px;text-align:left;cursor:pointer;white-space:nowrap;user-select:none;}
+  th:hover{background:#334155;}
+  td{padding:9px 8px;border-bottom:1px solid #eef1f5;vertical-align:top;}
+  tr:hover td{background:#f8fafc;}
+  .pos{color:var(--red);font-weight:600;}
+  .neg{color:var(--blue);font-weight:600;}
+  .ok{color:var(--green);font-weight:600;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;}
+  .b-red{background:#fee2e2;color:var(--red);}
+  .b-green{background:#dcfce7;color:var(--green);}
+  .note{font-size:11px;color:var(--mut);}
+  .legend{font-size:12px;color:var(--mut);margin-top:14px;line-height:1.7;}
+  @media print{.controls{display:none}}
+</style>
+</head>
+<body>
+<div id="gate" style="position:fixed;inset:0;background:#1e293b;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#fff;padding:40px;border-radius:14px;text-align:center;max-width:340px;width:90%">
+    <h2 style="color:#1e293b;margin-bottom:6px;">BSG Time Review</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:18px;">Enter PIN to view</p>
+    <input id="pin" type="password" inputmode="numeric" style="width:100%;padding:12px;font-size:18px;text-align:center;border:1px solid #d4dae3;border-radius:8px;" placeholder="PIN">
+    <button onclick="checkPin()" style="margin-top:14px;width:100%;padding:12px;background:#1e293b;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;">Enter</button>
+    <div id="pinErr" style="color:#dc2626;font-size:12px;margin-top:10px;min-height:16px;"></div>
+  </div>
+</div>
+<script>
+function checkPin(){if(document.getElementById("pin").value==="7666626"){document.getElementById("gate").remove();}else{document.getElementById("pinErr").textContent="Incorrect PIN";}}
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&document.getElementById("gate"))checkPin();});
+</script>
+<h1>Tech GPS vs Timeclock Comparison</h1>
+<div class="sub">GPS: Roadside Systems (truck first departure / final arrival) &nbsp;|&nbsp; Timeclock: GreenEmployee</div>
+
+<div class="cards" id="cards"></div>
+
+<div class="controls">
+  <select id="daySel"></select>
+  <input type="text" id="search" placeholder="Search tech or route...">
+  <select id="flagFilter">
+    <option value="all">All techs</option>
+    <option value="flagged">Flagged only (&gt;30 min gap)</option>
+    <option value="clean">Clean only</option>
+  </select>
+</div>
+
+<table id="tbl">
+  <thead><tr>
+    <th data-k="tech">Tech</th>
+    <th data-k="route">Route</th>
+    <th data-k="gpsOut">GPS Left Home</th>
+    <th data-k="clockIn">Clock In</th>
+    <th data-k="inDiff">In Diff</th>
+    <th data-k="gpsHome">GPS Arrived Home</th>
+    <th data-k="clockOut">Clock Out</th>
+    <th data-k="outDiff">Out Diff</th>
+    <th data-k="gpsHrs">GPS Day</th>
+    <th data-k="clkHrs">Paid Time</th>
+    <th>Notes</th>
+  </tr></thead>
+  <tbody></tbody>
+</table>
+
+<div class="legend">
+  <b>In Diff</b> = Clock In - GPS Left Home. <b>Out Diff</b> = Clock Out - GPS Arrived Home.
+  <span class="pos">Red +</span> = on the clock while the truck was parked at home.
+  <span class="neg">Blue -</span> = clocked out while the truck was still out driving.
+  Gaps over 30 minutes either way get a REVIEW badge.<br>
+  GPS times are the truck's first ignition/departure and final stop of the day from the Daily Trip Activity report.
+</div>
+
+<script>
+var days={
+"Mon June 8, 2026":[
+ {tech:"Shane Thompson",route:"RTE 041",gpsOut:"6:54 AM",clockIn:"7:45 AM",inDiff:51,gpsHome:"2:37 PM",clockOut:"3:45 PM",outDiff:68,gpsHrs:"7h 43m",clkHrs:"8h 00m",notes:"Clocked in 51m after leaving home; clocked out 1h08m after truck was home."},
+ {tech:"Clayton Walker",route:"RTE 051",gpsOut:"7:16 AM",clockIn:"7:00 AM",inDiff:-16,gpsHome:"4:56 PM",clockOut:"3:00 PM",outDiff:-116,gpsHrs:"9h 40m",clkHrs:"8h 00m",notes:"Clocked out 3:00 PM but truck made stops until 4:56 PM, plus an evening trip 6:52-7:11 PM ending at 8880 Salem Rd, Lewisburg (truck overnighted there)."},
+ {tech:"(Unmatched - no employee on Route 191)",route:"RTE 191",gpsOut:"7:39 AM",clockIn:"-",inDiff:null,gpsHome:"3:30 PM",clockOut:"-",outDiff:null,gpsHrs:"7h 51m",clkHrs:"-",notes:"No Route 191 employee in GreenEmployee list; no clock entry found for 6/8."},
+ {tech:"William Hewitt",route:"RTE 200",gpsOut:"6:50 AM",clockIn:"7:00 AM",inDiff:10,gpsHome:"3:56 PM",clockOut:"5:15 PM",outDiff:79,gpsHrs:"9h 06m",clkHrs:"10h 15m",notes:"Truck idle at home 7:22-9:29 AM before first real trip; clocked out 1h19m after truck parked home."},
+ {tech:"Lance Loughman",route:"RTE 273",gpsOut:"6:30 AM",clockIn:"6:45 AM",inDiff:15,gpsHome:"2:11 PM",clockOut:"3:00 PM",outDiff:49,gpsHrs:"7h 41m",clkHrs:"8h 15m",notes:"Clocked out 49m after truck was home."},
+ {tech:"Jason Molinaro",route:"RTE 284",gpsOut:"5:07 AM",clockIn:"4:15 AM",inDiff:-52,gpsHome:"10:52 AM",clockOut:"12:30 PM",outDiff:98,gpsHrs:"5h 45m",clkHrs:"8h 15m",notes:"Clocked in 52m before truck moved; clocked out 1h38m after truck home. Work location: PA warehouse - may explain both."},
+ {tech:"Joseph Jones",route:"RTE 294",gpsOut:"7:10 AM",clockIn:"7:15 AM",inDiff:5,gpsHome:"5:21 PM*",clockOut:"5:00 PM",outDiff:-21,gpsHrs:"10h 11m",clkHrs:"9h 00m",notes:"*Did not return home - day ended in Charlottesville, VA (overnight trip). Two clock segments: 7:15-8:30 AM and 9:15 AM-5:00 PM."},
+ {tech:"Steven Moore",route:"RTE-282",gpsOut:"6:43 AM",clockIn:"7:00 AM",inDiff:17,gpsHome:"6:05 PM",clockOut:"4:30 PM",outDiff:-95,gpsHrs:"11h 22m",clkHrs:"9h 30m",notes:"Clocked out 4:30 PM (web clock) but truck made stops until 6:05 PM arrival home."}
+],
+"Tue June 9, 2026":[
+ {tech:"Shane Thompson",route:"RTE 041",gpsOut:"7:00 AM",clockIn:"8:00 AM",inDiff:60,gpsHome:"3:16 PM",clockOut:"4:30 PM",outDiff:74,gpsHrs:"8h 16m",clkHrs:"8h 30m",notes:"Clocked in 1h after leaving home; clocked out 1h14m after truck was home."},
+ {tech:"Clayton Walker",route:"RTE 051",gpsOut:"7:10 AM*",clockIn:"7:30 AM",inDiff:20,gpsHome:"4:11 PM",clockOut:"3:45 PM",outDiff:-26,gpsHrs:"9h 01m",clkHrs:"8h 15m",notes:"*Truck started from 8880 Salem Rd, Lewisburg (overnighted at customer site, not home). Parked at home (212 Marilee Dr) 4:11 PM."},
+ {tech:"(Unmatched - no employee on Route 191)",route:"RTE 191",gpsOut:"7:01 AM",clockIn:"-",inDiff:null,gpsHome:"4:10 PM",clockOut:"-",outDiff:null,gpsHrs:"9h 09m",clkHrs:"-",notes:"No clock entry. Truck parked 8:17 AM-3:27 PM (7+ hrs) at 415 Railroad St, Sevierville before returning home."},
+ {tech:"William Hewitt",route:"RTE 200",gpsOut:"6:37 AM",clockIn:"7:15 AM",inDiff:38,gpsHome:"5:48 PM*",clockOut:"5:15 PM",outDiff:-33,gpsHrs:"11h 11m",clkHrs:"10h 00m",notes:"*Did not return home - day ended in Lumberton, NC (overnight trip)."},
+ {tech:"Lance Loughman",route:"RTE 273",gpsOut:"8:48 AM",clockIn:"9:15 AM",inDiff:27,gpsHome:"4:19 PM",clockOut:"5:30 PM",outDiff:71,gpsHrs:"7h 31m",clkHrs:"8h 15m",notes:"Late start (8:48 AM); clocked out 1h11m after truck was home."},
+ {tech:"Jason Molinaro",route:"RTE 284",gpsOut:"4:52 AM",clockIn:"4:15 AM",inDiff:-37,gpsHome:"12:39 PM",clockOut:"12:45 PM",outDiff:6,gpsHrs:"7h 47m",clkHrs:"8h 30m",notes:"Clocked in 37m before truck moved (PA warehouse). Clock-out matches arrival home."},
+ {tech:"Joseph Jones",route:"RTE 294",gpsOut:"6:17 AM*",clockIn:"none yet",inDiff:null,gpsHome:"still out",clockOut:"none yet",outDiff:null,gpsHrs:"13h+ (in progress)",clkHrs:"-",notes:"*Started from Charlottesville, VA hotel (overnight trip). Still driving near Roanoke, VA at 7:38 PM when data was pulled. No timesheet entry submitted yet."},
+ {tech:"Steven Moore",route:"RTE-282",gpsOut:"7:32 AM",clockIn:"7:15 AM",inDiff:-17,gpsHome:"5:07 PM",clockOut:"4:45 PM",outDiff:-22,gpsHrs:"9h 36m",clkHrs:"9h 30m",notes:"Close match both ends."}
+]};
+function fmt(m){if(m===null)return"-";var s=m<0?"-":"+";var a=Math.abs(m);return s+(a>=60?Math.floor(a/60)+"h "+String(a%60).padStart(2,"0")+"m":a+"m");}
+function cls(m){if(m===null)return"";return Math.abs(m)>30?(m>0?"pos":"neg"):"ok";}
+function flagged(r){return (r.inDiff!==null&&Math.abs(r.inDiff)>30)||(r.outDiff!==null&&Math.abs(r.outDiff)>30)||r.inDiff===null;}
+var sortKey=null,sortAsc=true;
+var daySel=document.getElementById("daySel");
+Object.keys(days).forEach(function(d){var o=document.createElement("option");o.value=d;o.textContent=d;daySel.appendChild(o);});
+daySel.value=Object.keys(days)[Object.keys(days).length-1];
+function render(){
+  var data=days[daySel.value];
+  var q=document.getElementById("search").value.toLowerCase();
+  var f=document.getElementById("flagFilter").value;
+  var rows=data.filter(function(r){return (r.tech+" "+r.route).toLowerCase().indexOf(q)>-1;});
+  if(f==="flagged")rows=rows.filter(flagged);
+  if(f==="clean")rows=rows.filter(function(r){return !flagged(r);});
+  if(sortKey)rows=rows.slice().sort(function(a,b){var x=a[sortKey],y=b[sortKey];var r=((x===null)-(y===null))||(typeof x==="number"?x-y:String(x).localeCompare(String(y)));return sortAsc?r:-r;});
+  document.querySelector("#tbl tbody").innerHTML=rows.map(function(r){
+    var fl=flagged(r);
+    return "<tr><td><b>"+r.tech+"</b><br><span class='badge "+(fl?"b-red":"b-green")+"'>"+(fl?"REVIEW":"OK")+"</span></td>"+
+    "<td>"+r.route+"</td><td>"+r.gpsOut+"</td><td>"+r.clockIn+"</td><td class='"+cls(r.inDiff)+"'>"+fmt(r.inDiff)+"</td>"+
+    "<td>"+r.gpsHome+"</td><td>"+r.clockOut+"</td><td class='"+cls(r.outDiff)+"'>"+fmt(r.outDiff)+"</td>"+
+    "<td>"+r.gpsHrs+"</td><td>"+r.clkHrs+"</td><td class='note'>"+r.notes+"</td></tr>";}).join("");
+  var matched=data.filter(function(r){return r.outDiff!==null;});
+  var flaggedN=data.filter(flagged).length;
+  var avg=Math.round(matched.reduce(function(s,r){return s+r.outDiff;},0)/matched.length);
+  document.getElementById("cards").innerHTML=
+   "<div class='card'><div class='v'>"+data.length+"</div><div class='l'>Trucks tracked</div></div>"+
+   "<div class='card'><div class='v'>"+matched.length+"</div><div class='l'>Matched to timeclock</div></div>"+
+   "<div class='card'><div class='v' style='color:var(--red)'>"+flaggedN+"</div><div class='l'>Flagged for review (&gt;30 min gap)</div></div>"+
+   "<div class='card'><div class='v'>"+fmt(avg)+"</div><div class='l'>Avg clock-out vs arrived-home</div></div>";
+}
+daySel.addEventListener("change",render);
+document.getElementById("search").addEventListener("input",render);
+document.getElementById("flagFilter").addEventListener("change",render);
+document.querySelectorAll("th[data-k]").forEach(function(th){th.addEventListener("click",function(){var k=th.dataset.k;sortAsc=sortKey===k?!sortAsc:true;sortKey=k;render();});});
+render();
+</script>
+</body>
+</html>
